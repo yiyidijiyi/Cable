@@ -1168,7 +1168,7 @@ void Image::SegmentPoints(vector<Point>& seg, Point p1, Point p2)
 /*
 * 参数：
 * 返回：
-* 功能：返回处理结果
+* 功能：匹配线缆中的丝带并标注位置
 */
 Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2)
 {
@@ -1184,20 +1184,25 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 		int b;
 		int row = m_imageDst.rows;
 		int col = m_imageDst.cols;
+		int end1, end2;
 
 		int count = 0;
-		int i = 0, j = 0;
+		int i = 0;
 		vector<Point> seg;
 		size_t n = 0;
 
-		while (i < col)
-		{		
-			y1 = y0 + h0;
-			x1 = i;
-			b = cvRound(y1 - k * x1);
-			y2 = y0 - h0;
-			x2 = cvRound((y2 - b) / k);
-			
+		// 从左至右匹配，第一部分
+		end1 = cvRound((-h0) / k);
+		i = 0;
+
+		while (i < end1)
+		{
+			b = cvRound(y0 - k * i);
+			y1 = y0 - h0;
+			x1 = cvRound((y1 - b) / k);
+			x2 = 0;
+			y2 = b;
+
 			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
 			n = seg.size();
 			count = 0;
@@ -1223,55 +1228,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				if (0 == i)
-				{
-					for (j = 0; j < 2 * h0; j++)
-					{
-						y1 = y0 + h0 - j;
-						x1 = 0;
-						b = y1;
-						y2 = y0 - h0;
-						x2 = cvRound((y2 - b) / k);
-
-						SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
-						n = seg.size();
-						count = 0;
-						for (size_t m = 0; m < n; m++)
-						{
-							int x = seg[m].x;
-							int y = seg[m].y;
-
-							if ((x < col) && (y < row))
-							{
-								uchar* data = m_imageDst.ptr<uchar>(y);
-
-								if (*(data + x))
-								{
-									count++;
-								}
-							}
-							else
-							{
-								error = 1;
-							}
-						}
-
-						if (count <= cvRound((1.0 - s) * n))
-						{
-							vec1.push_back(x1);
-							cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
-							break;
-						}
-
-					}
-				}
-				else
-				{
-					vec1.push_back(i);
-					cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
-				}
-
 				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
+				vec1.push_back(i);
 			}
 			else
 			{
@@ -1279,13 +1238,14 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 			}
 		}
 
-		i = col - 1;
+		// 从左至右匹配，第二部分
+		end2 = cvRound(h0 / k + col - 1);
 
-		while (i > 0)
+		while (i < end2)
 		{
+			b = cvRound(y0 - k * i);
 			y1 = y0 - h0;
-			x1 = i;
-			b = cvRound(y1 - k * x1);
+			x1 = cvRound((y1 - b) / k);
 			y2 = y0 + h0;
 			x2 = cvRound((y2 - b) / k);
 
@@ -1314,55 +1274,99 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				if ((col - 1) == i)
+				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
+				vec1.push_back(i);
+			}
+			else
+			{
+				i++;
+			}
+		}
+
+		// 从左至右匹配，第三部分
+		while (i < col)
+		{
+			b = cvRound(y0 - k * i);
+			x1 = col - 1;
+			y1 = cvRound(k * x1 + b);
+			y2 = y0 + h0;
+			x2 = cvRound((y2 - b) / k);
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
 				{
-					for (j = 0; j < 2 * h0; j++)
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
 					{
-						y1 = y0 - h0 + j;
-						x1 = col - 1;
-						b = cvRound(y1 - k * x1);;
-						y2 = y0 + h0;
-						x2 = cvRound((y2 - b) / k);
-
-						SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
-						n = seg.size();
-						count = 0;
-						for (size_t m = 0; m < n; m++)
-						{
-							int x = seg[m].x;
-							int y = seg[m].y;
-
-							if ((x < col) && (y < row))
-							{
-								uchar* data = m_imageDst.ptr<uchar>(y);
-
-								if (*(data + x))
-								{
-									count++;
-								}
-							}
-							else
-							{
-								error = 1;
-							}
-						}
-
-						if (count <= cvRound(0.1 * n))
-						{
-							vec1.push_back(x1);
-							cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
-							break;
-						}
-
+						count++;
 					}
 				}
 				else
 				{
-					vec1.push_back(i);
-					cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
+					error = 1;
 				}
+			}
 
+			if (count >= cvRound(s * n))
+			{
+				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
+				vec1.push_back(i);
+			}
+			else
+			{
+				i++;
+			}
+		}
+
+		// 从右至左匹配，第一部分
+		i = col - 1;
+
+		while (i > end2)
+		{
+			b = cvRound(y0 - k * i);
+			x1 = col - 1;
+			y1 = cvRound(k * x1 + b);
+			y2 = y0 + h0;
+			x2 = cvRound((y2 - b) / k);
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
 				i -= gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
+				vec2.push_back(i);
 			}
 			else
 			{
@@ -1370,6 +1374,93 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 			}
 		}
 
+		// 从右至左匹配，第二部分
+		while (i > end1)
+		{
+			b = cvRound(y0 - k * i);
+			y1 = y0 - h0;
+			x1 = cvRound((y1 - b) / k);
+			y2 = y0 + h0;
+			x2 = cvRound((y2 - b) / k);
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
+				i -= gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
+				vec2.push_back(i);
+			}
+			else
+			{
+				i--;
+			}
+		}
+
+		// 从左至右匹配，第三部分
+		while (i > 0)
+		{
+			b = cvRound(y0 - k * i);
+			y1 = y0 - h0;
+			x1 = cvRound((y1 - b) / k);
+			x2 = 0;
+			y2 = b;
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
+				i -= gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
+				vec2.push_back(i);
+			}
+			else
+			{
+				i--;
+			}
+		}
 	}
 
 	return m_imageSrc;
@@ -1379,7 +1470,7 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 /*
 * 参数：
 * 返回：
-* 功能：返回处理结果
+* 功能：匹配特定颜色的线缆并标注位置
 */
 Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 {
@@ -1394,25 +1485,24 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 		int b;
 		int row = m_imageDst.rows;
 		int col = m_imageDst.cols;
-		int start, end;
+		int end1, end2;
 
 		int count = 0;
-		int i = 0, j = 0;
+		int i = 0;
 		vector<Point> seg;
 		size_t n = 0;
 
 		// 从左至右匹配，第一部分
-		start = cvRound((-h0) / k);
-		end = cvRound((-2 * h0) / k);
-		i = start;
+		end1 = cvRound((-h0) / k);
+		i = 0;
 
-		while (i < end)
-		{
+		while (i < end1)
+		{	
+			b = cvRound(y0 - k * i);
 			y1 = y0 - h0;
-			x1 = i;
-			b = cvRound(y1 - k * x1);
-			y2 = b;
+			x1 = cvRound((y1 - b) / k);
 			x2 = 0;
+			y2 = b;
 
 			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
 			n = seg.size();
@@ -1450,13 +1540,57 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 		}
 
 		// 从左至右匹配，第二部分
-		end = col;
+		end2 = cvRound(h0 / k + col - 1);
 
-		while (i < end)
+		while (i < end2)
 		{
+			b = cvRound(y0 - k * i);
 			y1 = y0 - h0;
-			x1 = i;
-			b = cvRound(y1 - k * x1);
+			x1 = cvRound((y1 - b) / k);
+			y2 = y0 + h0;
+			x2 = cvRound((y2 - b) / k);
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
+				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
+				vec.push_back(i);
+			}
+			else
+			{
+				i++;
+			}
+		}
+
+		// 从左至右匹配，第三部分
+		while (i < col)
+		{
+			b = cvRound(y0 - k * i);
+			x1 = col - 1;
+			y1 = cvRound(k * x1 + b);
 			y2 = y0 + h0;
 			x2 = cvRound((y2 - b) / k);
 
