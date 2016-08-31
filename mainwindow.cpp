@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-15
-* 最后修改：2016-08-29
+* 最后修改：2016-08-31
 * 作    者：syf
 * 描    述：
 */
@@ -430,6 +430,7 @@ void MainWindow::OnMaskClicked()
 	int gap1 = ui->lineEdit_gap1->text().toInt();
 	vector<int> vec1;
 	vector<int> vec2;
+	vector<int> vec3;
 
 	double s2 = ui->lineEdit_scale2->text().toDouble();
 	int gap2 = ui->lineEdit_gap2->text().toInt();
@@ -440,6 +441,8 @@ void MainWindow::OnMaskClicked()
 	m_pImage->Preprocessing();
 	m_pImage->ColorFilter(3, thresh);
 	m_pImage->Calc(y0, s1, gap1, vec1, vec2);
+	m_pImage->ColorFilter(2, thresh);
+	m_pImage->Calc(y0, s2, gap2, vec3);
 	//ShowImage(m_pImage->GetSrc());
 	//ShowImage(m_pImage->ColorFilter(2, thresh));
 

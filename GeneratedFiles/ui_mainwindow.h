@@ -811,7 +811,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        tabWidget->setCurrentIndex(2);
+        tabWidget->setCurrentIndex(1);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -878,7 +878,7 @@ public:
         label_12->setText(QApplication::translate("MainWindow", "\351\227\264\351\232\2311\357\274\232", 0));
         lineEdit_gap1->setText(QApplication::translate("MainWindow", "200", 0));
         label_16->setText(QApplication::translate("MainWindow", "\346\257\224\344\276\213\345\233\240\345\255\2202\357\274\232", 0));
-        lineEdit_scale2->setText(QApplication::translate("MainWindow", "0.6", 0));
+        lineEdit_scale2->setText(QApplication::translate("MainWindow", "0.2", 0));
         label_17->setText(QApplication::translate("MainWindow", "\351\227\264\351\232\2312\357\274\232", 0));
         lineEdit_gap2->setText(QApplication::translate("MainWindow", "500", 0));
         pushButton_createMask2->setText(QApplication::translate("MainWindow", "\347\224\237\346\210\220\346\250\241\346\235\2772", 0));

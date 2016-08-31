@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-16
-* 最后修改：2016-08-29
+* 最后修改：2016-08-31
 * 作    者：syf
 * 描    述：
 */
@@ -46,8 +46,8 @@ BOOL Image::LoadImage(const QString& path, int flag)
 	BOOL state = FALSE;
 
 	// 用于支持中文路径
-	QTextCodec *code = QTextCodec::codecForName("gb18030");
-	string fileName = code->fromUnicode(path).data();
+	QTextCodec* codec = QTextCodec::codecForName("gb18030");
+	string fileName = codec->fromUnicode(path).data();
 
 	m_imageSrc.release();
 	m_image.release();
@@ -1359,7 +1359,7 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 				else
 				{
 					vec1.push_back(i);
-					cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
+					cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
 				}
 
 				i -= gap;
@@ -1383,14 +1383,119 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 */
 Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 {
-
+	int error = 0;
 	vec.clear();
 
-	if ((m_imageSrc.data) && (3 == m_imageSrc.channels()))
+	if (m_imageDst.data)
 	{
+		double k = -0.129;
+		int h0 = 100;
+		int x1, y1, x2, y2;
+		int b;
+		int row = m_imageDst.rows;
+		int col = m_imageDst.cols;
+		int start, end;
 
+		int count = 0;
+		int i = 0, j = 0;
+		vector<Point> seg;
+		size_t n = 0;
+
+		// 从左至右匹配，第一部分
+		start = cvRound((-h0) / k);
+		end = cvRound((-2 * h0) / k);
+		i = start;
+
+		while (i < end)
+		{
+			y1 = y0 - h0;
+			x1 = i;
+			b = cvRound(y1 - k * x1);
+			y2 = b;
+			x2 = 0;
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
+				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
+				vec.push_back(i);
+			}
+			else
+			{
+				i++;
+			}
+		}
+
+		// 从左至右匹配，第二部分
+		end = col;
+
+		while (i < end)
+		{
+			y1 = y0 - h0;
+			x1 = i;
+			b = cvRound(y1 - k * x1);
+			y2 = y0 + h0;
+			x2 = cvRound((y2 - b) / k);
+
+			SegmentPoints(seg, Point(x1, y1), Point(x2, y2));
+			n = seg.size();
+			count = 0;
+			for (size_t m = 0; m < n; m++)
+			{
+				int x = seg[m].x;
+				int y = seg[m].y;
+
+				if ((x < col) && (y < row))
+				{
+					uchar* data = m_imageDst.ptr<uchar>(y);
+
+					if (*(data + x))
+					{
+						count++;
+					}
+				}
+				else
+				{
+					error = 1;
+				}
+			}
+
+			if (count >= cvRound(s * n))
+			{
+				i += gap;
+				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
+				vec.push_back(i);
+			}
+			else
+			{
+				i++;
+			}
+		}
 	}
 
-	return m_image;
+	return m_imageSrc;
 
 }
