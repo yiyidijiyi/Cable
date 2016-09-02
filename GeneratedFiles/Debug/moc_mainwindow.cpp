@@ -19,8 +19,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[32];
-    char stringdata0[542];
+    QByteArrayData data[34];
+    char stringdata0[598];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -60,7 +60,9 @@ QT_MOC_LITERAL(27, 428, 17), // "OnStopSnapClicked"
 QT_MOC_LITERAL(28, 446, 24), // "OnSoftwareTriggerClicked"
 QT_MOC_LITERAL(29, 471, 21), // "OnExposureModeChanged"
 QT_MOC_LITERAL(30, 493, 22), // "OnExporureValueChanged"
-QT_MOC_LITERAL(31, 516, 25) // "OnWhiteBalanceModeChanged"
+QT_MOC_LITERAL(31, 516, 25), // "OnWhiteBalanceModeChanged"
+QT_MOC_LITERAL(32, 542, 26), // "OnWhiteBalanceRatioChanged"
+QT_MOC_LITERAL(33, 569, 28) // "OnWhiteBalanceChannelChanged"
 
     },
     "MainWindow\0OnTimer\0\0OpenImage\0OnImageSnap\0"
@@ -76,7 +78,9 @@ QT_MOC_LITERAL(31, 516, 25) // "OnWhiteBalanceModeChanged"
     "OnOpenCameraClicked\0OnCloseCameraClicked\0"
     "OnStartSnapClicked\0OnStopSnapClicked\0"
     "OnSoftwareTriggerClicked\0OnExposureModeChanged\0"
-    "OnExporureValueChanged\0OnWhiteBalanceModeChanged"
+    "OnExporureValueChanged\0OnWhiteBalanceModeChanged\0"
+    "OnWhiteBalanceRatioChanged\0"
+    "OnWhiteBalanceChannelChanged"
 };
 #undef QT_MOC_LITERAL
 
@@ -86,7 +90,7 @@ static const uint qt_meta_data_MainWindow[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      30,   14, // methods
+      32,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -94,38 +98,42 @@ static const uint qt_meta_data_MainWindow[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    0,  164,    2, 0x0a /* Public */,
-       3,    0,  165,    2, 0x0a /* Public */,
-       4,    0,  166,    2, 0x0a /* Public */,
-       5,    0,  167,    2, 0x0a /* Public */,
-       6,    0,  168,    2, 0x0a /* Public */,
-       7,    0,  169,    2, 0x0a /* Public */,
-       8,    0,  170,    2, 0x0a /* Public */,
-       9,    0,  171,    2, 0x0a /* Public */,
-      10,    0,  172,    2, 0x0a /* Public */,
-      11,    0,  173,    2, 0x0a /* Public */,
-      12,    0,  174,    2, 0x0a /* Public */,
-      13,    0,  175,    2, 0x0a /* Public */,
-      14,    0,  176,    2, 0x0a /* Public */,
-      15,    0,  177,    2, 0x0a /* Public */,
-      16,    0,  178,    2, 0x0a /* Public */,
-      17,    0,  179,    2, 0x0a /* Public */,
-      18,    0,  180,    2, 0x0a /* Public */,
-      19,    0,  181,    2, 0x0a /* Public */,
-      20,    0,  182,    2, 0x0a /* Public */,
-      21,    0,  183,    2, 0x0a /* Public */,
-      22,    0,  184,    2, 0x0a /* Public */,
-      23,    0,  185,    2, 0x0a /* Public */,
-      24,    0,  186,    2, 0x0a /* Public */,
-      25,    0,  187,    2, 0x0a /* Public */,
-      26,    0,  188,    2, 0x0a /* Public */,
-      27,    0,  189,    2, 0x0a /* Public */,
-      28,    0,  190,    2, 0x0a /* Public */,
-      29,    0,  191,    2, 0x0a /* Public */,
-      30,    0,  192,    2, 0x0a /* Public */,
-      31,    0,  193,    2, 0x0a /* Public */,
+       1,    0,  174,    2, 0x0a /* Public */,
+       3,    0,  175,    2, 0x0a /* Public */,
+       4,    0,  176,    2, 0x0a /* Public */,
+       5,    0,  177,    2, 0x0a /* Public */,
+       6,    0,  178,    2, 0x0a /* Public */,
+       7,    0,  179,    2, 0x0a /* Public */,
+       8,    0,  180,    2, 0x0a /* Public */,
+       9,    0,  181,    2, 0x0a /* Public */,
+      10,    0,  182,    2, 0x0a /* Public */,
+      11,    0,  183,    2, 0x0a /* Public */,
+      12,    0,  184,    2, 0x0a /* Public */,
+      13,    0,  185,    2, 0x0a /* Public */,
+      14,    0,  186,    2, 0x0a /* Public */,
+      15,    0,  187,    2, 0x0a /* Public */,
+      16,    0,  188,    2, 0x0a /* Public */,
+      17,    0,  189,    2, 0x0a /* Public */,
+      18,    0,  190,    2, 0x0a /* Public */,
+      19,    0,  191,    2, 0x0a /* Public */,
+      20,    0,  192,    2, 0x0a /* Public */,
+      21,    0,  193,    2, 0x0a /* Public */,
+      22,    0,  194,    2, 0x0a /* Public */,
+      23,    0,  195,    2, 0x0a /* Public */,
+      24,    0,  196,    2, 0x0a /* Public */,
+      25,    0,  197,    2, 0x0a /* Public */,
+      26,    0,  198,    2, 0x0a /* Public */,
+      27,    0,  199,    2, 0x0a /* Public */,
+      28,    0,  200,    2, 0x0a /* Public */,
+      29,    0,  201,    2, 0x0a /* Public */,
+      30,    0,  202,    2, 0x0a /* Public */,
+      31,    0,  203,    2, 0x0a /* Public */,
+      32,    0,  204,    2, 0x0a /* Public */,
+      33,    0,  205,    2, 0x0a /* Public */,
 
  // slots: parameters
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -196,6 +204,8 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 27: _t->OnExposureModeChanged(); break;
         case 28: _t->OnExporureValueChanged(); break;
         case 29: _t->OnWhiteBalanceModeChanged(); break;
+        case 30: _t->OnWhiteBalanceRatioChanged(); break;
+        case 31: _t->OnWhiteBalanceChannelChanged(); break;
         default: ;
         }
     }
@@ -227,13 +237,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 30)
+        if (_id < 32)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 30;
+        _id -= 32;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 30)
+        if (_id < 32)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 30;
+        _id -= 32;
     }
     return _id;
 }

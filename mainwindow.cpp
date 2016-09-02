@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-15
-* 最后修改：2016-08-31
+* 最后修改：2016-09-02
 * 作    者：syf
 * 描    述：
 */
@@ -91,7 +91,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->pushButton_trigger, &QPushButton::clicked, this, &MainWindow::OnSoftwareTriggerClicked);
 	connect(ui->comboBox_autoExposure, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::OnExposureModeChanged);
 	connect(ui->comboBox_autoWb, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::OnWhiteBalanceModeChanged);
+	connect(ui->comboBox_balanceChannel, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &MainWindow::OnWhiteBalanceChannelChanged);
 	connect(ui->lineEdit_exposure, &QLineEdit::editingFinished, this, &MainWindow::OnExporureValueChanged);
+	connect(ui->lineEdit_balance, &QLineEdit::editingFinished, this, &MainWindow::OnWhiteBalanceRatioChanged);
 
 	connect(m_pTimer, &QTimer::timeout, this, &MainWindow::OnTimer);
 	connect(m_pCamera, &Camera::Signal_ImageSnaped, this, &MainWindow::OnImageSnap);
@@ -142,17 +144,16 @@ void  MainWindow::ShowImage(const Mat& image)
 		int channel = image.channels();
 		int w = image.cols;
 		int h = image.rows;
+		int bytesPerLine = image.step;
 		QImage qimg;
-		Mat rgb;
 
 		if (1 == channel)
 		{
-			qimg = QImage((uchar*)image.data, w, h, QImage::Format_Grayscale8);
+			qimg = QImage(image.data, w, h, image.step, QImage::Format_Grayscale8);
 		}
 		else if (3 == channel)
 		{
-			cvtColor(image, rgb, CV_BGR2RGB);
-			qimg = QImage((uchar*)rgb.data, w, h, QImage::Format_RGB888);
+			qimg = QImage(image.data, w, h, bytesPerLine, QImage::Format_RGB888).rgbSwapped();
 		}
 		else
 		{
@@ -191,6 +192,7 @@ void MainWindow::UpdataUI()
 			ui->lineEdit_exposure->setEnabled(false);
 
 			ui->comboBox_autoWb->setEnabled(false);
+			ui->lineEdit_balance->setEnabled(false);
 		}
 		else
 		{
@@ -201,6 +203,15 @@ void MainWindow::UpdataUI()
 			ui->lineEdit_exposure->setEnabled(true);
 
 			ui->comboBox_autoWb->setEnabled(true);
+
+			if (0 == ui->comboBox_autoWb->currentIndex())
+			{
+				ui->lineEdit_balance->setEnabled(true);
+			}
+			else
+			{
+				ui->lineEdit_balance->setEnabled(false);
+			}
 
 			if (!m_pCamera->IsSnap())
 			{
@@ -238,6 +249,9 @@ void MainWindow::UpdataUI()
 
 		ui->comboBox_autoExposure->setEnabled(false);
 		ui->lineEdit_exposure->setEnabled(false);
+
+		ui->comboBox_autoWb->setEnabled(false);
+		ui->lineEdit_balance->setEnabled(false);
 	}
 }
 
@@ -284,10 +298,9 @@ void MainWindow::OpenImage()
 	}
 	else
 	{
-		Mat image = m_pImage->GetImage();
-		ShowImage(image);
-
-		int avg = m_pImage->GetAvg();
+		ShowImage(m_pImage->GetSrc());
+		int y0 = m_pImage->FindCable();
+		int avg = m_pImage->GetAvg(y0);
 		ui->lineEdit_avg->setText(QString::number(avg));
 
 		//int y = m_pImage->FindCable();
@@ -434,7 +447,6 @@ void MainWindow::OnMaskClicked()
 
 	double s2 = ui->lineEdit_scale2->text().toDouble();
 	int gap2 = ui->lineEdit_gap2->text().toInt();
-	vector<int>  vec;
 
 	int thresh = ui->lineEdit_avg->text().toInt();
 	int y0 = m_pImage->FindCable();
@@ -446,16 +458,17 @@ void MainWindow::OnMaskClicked()
 	//ShowImage(m_pImage->GetSrc());
 	//ShowImage(m_pImage->ColorFilter(2, thresh));
 
-	/*m_pImage->ColorFilter(3, thresh);
-	m_pImage->MaskProcess(s1, gap1, y, vec1, vec2);
+	//m_pImage->ColorFilter(3, thresh);
+	//m_pImage->MaskProcess(s1, gap1, y, vec1, vec2);
 
-	m_pImage->ColorFilter(2, thresh);
-	m_pImage->MaskProcess(s2, gap2, y, vec);
-
-	ShowImage(m_pImage->GetImage());
+	//m_pImage->ColorFilter(2, thresh);
+	//m_pImage->MaskProcess(s2, gap2, y, vec);
+	m_pImage->CableRange(y0);
+	ShowImage(m_pImage->GetSrc());
 
 	size_t size1 = vec1.size();
 	size_t size2 = vec2.size();
+	size_t size3 = vec3.size();
 
 
 	if ((size1 != size2) || (size1 < 2) || (size2 < 2))
@@ -522,22 +535,22 @@ void MainWindow::OnMaskClicked()
 		ui->textEdit->append("    ");
 	}
 
-	size_t size = vec.size();
-	ui->textEdit->append(QStringLiteral("识别到蓝色线缆") + QString::number(size) + QStringLiteral("段。"));
 
-	if (size < 2)
+	ui->textEdit->append(QStringLiteral("识别到蓝色线缆") + QString::number(size3) + QStringLiteral("段。"));
+
+	if (size3 < 2)
 	{
 		ui->textEdit->append(QStringLiteral("无法结算截距！"));
 	}
 	else
 	{
-		int max = vec[1] - vec[0];
+		int max = vec3[1] - vec3[0];
 		int min = max;
 		int avg = max;
 		int t;
-		for (size_t j = 1; j < size - 1; j++)
+		for (size_t j = 1; j < size3 - 1; j++)
 		{
-			t = vec[j + 1] - vec[j];
+			t = vec3[j + 1] - vec3[j];
 
 			if (t > max)
 			{
@@ -552,14 +565,14 @@ void MainWindow::OnMaskClicked()
 			avg += t;
 		}
 
-		avg /= size - 1;
+		avg /= size3 - 1;
 
 		ui->textEdit->append(QStringLiteral("平均截距：") + QString::number(avg) + QStringLiteral("个像素点。"));
 		ui->textEdit->append(QStringLiteral("最大截距：") + QString::number(max) + QStringLiteral("个像素点。"));
 		ui->textEdit->append(QStringLiteral("最小截距：") + QString::number(min) + QStringLiteral("个像素点。"));
 	}
 
-	ui->textEdit->append("-----------------------------------------------------------");*/
+	ui->textEdit->append("-----------------------------------------------------------");
 }
 
 
@@ -889,12 +902,16 @@ void MainWindow::OnIncreaseAngleClicked()
 void MainWindow::OnCreateMask2Clicked()
 {
 	Point p1, p2;
+	double k = 0;
 	p1.x = ui->lineEdit_startX->text().toInt();
 	p1.y = ui->lineEdit_startY->text().toInt();
 	p2.x= ui->lineEdit_endX->text().toInt();
 	p2.y= ui->lineEdit_endY->text().toInt();
+	ui->lineEdit_k2->setText(QString::number(k));
 
-	m_pImage->CreateMask2(p1, p2);
+	m_pImage->SetK2(k);
+
+	//m_pImage->CreateMask2(p1, p2);
 }
 
 
@@ -906,12 +923,17 @@ void MainWindow::OnCreateMask2Clicked()
 void MainWindow::OnCreateMask1Clicked()
 {
 	Point p1, p2;
+	double k = 0;
 	p1.x = ui->lineEdit_startX->text().toInt();
 	p1.y = ui->lineEdit_startY->text().toInt();
 	p2.x = ui->lineEdit_endX->text().toInt();
 	p2.y = ui->lineEdit_endY->text().toInt();
+	k = (p2.y - p1.y) / (p2.x - p1.x);
 
-	m_pImage->CreateMask1(p1, p2);
+	ui->lineEdit_k1->setText(QString::number(k));
+
+	m_pImage->SetK1(k);
+	//m_pImage->CreateMask1(p1, p2);
 }
 
 
@@ -935,6 +957,11 @@ void MainWindow::OnOpenCameraClicked()
 	{
 		ui->textEdit->append(QStringLiteral("打开相机成功！"));
 	}
+
+	int index = ui->comboBox_balanceChannel->currentIndex();
+	double ratio = 1.0;
+	m_pCamera->GetBalanceRatio(index, &ratio);
+	ui->lineEdit_balance->setText(QString::number(ratio));
 
 	UpdataUI();
 }
@@ -1003,14 +1030,15 @@ void  MainWindow::OnImageSnap()
 {
 	m_pImage->LoadImage(m_pCamera->GetImage());
 
-	int avg = m_pImage->GetAvg();
+	int y0 = m_pImage->FindCable();
+	int avg = m_pImage->GetAvg(y0);
 	ui->lineEdit_level->setText(QString::number(avg));
 	ui->lineEdit_avg->setText(QString::number(avg));
 
 	if (ui->checkBox_calc->isChecked())
 	{
 		OnMaskClicked();
-		ShowImage(m_pImage->GetSrc());
+		//ShowImage(m_pImage->GetSrc());
 	}
 	else
 	{
@@ -1063,4 +1091,47 @@ void MainWindow::OnWhiteBalanceModeChanged()
 	int index = ui->comboBox_autoWb->currentIndex();
 
 	m_pCamera->SetAutoWhiteBalance(index);
+
+	UpdataUI();
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：白平衡系数改变
+*/
+void MainWindow::OnWhiteBalanceRatioChanged()
+{
+	int index = ui->comboBox_balanceChannel->currentIndex();
+	double ratio = ui->lineEdit_balance->text().toDouble();
+
+	if (ratio < 0.1)
+	{
+		ratio = 0.1;
+	}
+	else if (ratio > 5.0)
+	{
+		ratio = 5.0;
+	}
+
+	ui->lineEdit_balance->setText(QString::number(ratio));
+
+	m_pCamera->SetBalanceRatio(index, ratio);
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：白平衡通道改变
+*/
+void MainWindow::OnWhiteBalanceChannelChanged()
+{
+	int index = ui->comboBox_balanceChannel->currentIndex();
+	double ratio = 1.0;
+
+	m_pCamera->GetBalanceRatio(index, &ratio);
+
+	ui->lineEdit_balance->setText(QString::number(ratio));
 }

@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-16
-* 最后修改：2016-08-31
+* 最后修改：2016-09-02
 * 作    者：syf
 * 描    述：
 */
@@ -17,7 +17,10 @@ Image::Image(QObject *parent)
 	m_mask1Pixs(0),
 	m_mask2Pixs(0),
 	m_roi1Height(0),
-	m_roi2Height(0)
+	m_roi2Height(0),
+	m_k1(0.61),
+	m_k2(-0.129),
+	m_pixsOfCable(100)
 {
 	//DrawLineInMask();
 }
@@ -98,6 +101,50 @@ BOOL Image::LoadImage(Mat& image)
 	}
 
 	return state;
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：设置斜率1
+*/
+void Image::SetK1(double k)
+{
+	m_k1 = k;
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：设置斜率2
+*/
+void Image::SetK2(double k)
+{
+	m_k2 = k;
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：设置光缆宽度所占像素
+*/
+void Image::SetPixsOfCable(int pixs)
+{
+	m_pixsOfCable = pixs;
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：返回光缆宽度所占像素
+*/
+int Image::GetPixsOfCable()
+{
+	return m_pixsOfCable;
 }
 
 
@@ -260,9 +307,9 @@ Mat& Image::ColorFilter(int index, int thresh)
 {
 	int channel = m_image.channels();
 	int value = 0;
-	double diffThresh = 0.5;
+	double diffThresh = 0.6;
 	// 0--黑色，1--白色， 2--红色成本占有，3--绿色成本占优，4--蓝色成分占优
-	int color = 0;
+	//int color = 0;
 
 	if ((m_image.data) && (3 == channel))
 	{
@@ -289,7 +336,7 @@ Mat& Image::ColorFilter(int index, int thresh)
 				switch (index)
 				{
 				case 0:
-					if ((r < thresh) || (r < g) || (r < b) || (dif < diffThresh) || (n >= 3 * thresh))
+					if (((3 * r) < thresh) || (r < g) || (r < b) || (dif < diffThresh) || (n >= 3 * thresh))
 					{
 						*(dst + j) = value;
 					}
@@ -299,7 +346,7 @@ Mat& Image::ColorFilter(int index, int thresh)
 					}
 					break;
 				case 1:
-					if ((g < thresh) || (g < r) || (g < b) || (dif < diffThresh) || (n >= 3 * thresh))
+					if (((3 * g) < thresh) || (g < r) || (g < b) || (dif < diffThresh) || (n >= 3 * thresh))
 					{
 						*(dst + j) = value;
 					}
@@ -309,7 +356,7 @@ Mat& Image::ColorFilter(int index, int thresh)
 					}
 					break;					
 				case 2:
-					if ((b < thresh) || (b < g) || (b < r) || (dif < diffThresh) || (n >= 3 * thresh))
+					if (((3 * b) < thresh) || (b < g) || (b < r) || (dif < diffThresh) || (n >= 3 * thresh))
 					{
 						*(dst + j) = value;
 					}
@@ -319,7 +366,7 @@ Mat& Image::ColorFilter(int index, int thresh)
 					}
 					break;
 				case 3:
-					if ((n < thresh * 2) || (dif > diffThresh))
+					if ((n < cvRound(thresh * 0.5)) || (dif > 0.4))
 					{
 						*(dst + j) = value;
 					}
@@ -420,7 +467,7 @@ int Image::GetAvgRoi()
 * 返回：图像的平均灰度值
 * 功能：返回原图的平均灰度值，如果是彩色图，先转换为灰度图再计算
 */
-int Image::GetAvg()
+int Image::GetAvg(int y0)
 {
 	int avg = 0;	
 	
@@ -452,7 +499,8 @@ int Image::GetAvg()
 	{
 		Mat gray;
 		int w = m_image.cols;
-		int h = m_image.rows;
+		//int h = m_image.rows;
+		int h0 = 100;
 		int pixCnt = 0;
 		int pixSum = 0;
 		int thresh = 0;
@@ -477,7 +525,7 @@ int Image::GetAvg()
 
 		pixSum = 0;
 
-		for (int i = 0; i < h; i++)
+		for (int i = y0 - h0; i < y0 + h0; i++)
 		{
 			data = gray.ptr<uchar>(i);
 
@@ -968,6 +1016,8 @@ Mat& Image::ThreshFilter(int thresh, int size)
 int Image::FindCable(void)
 {
 	int y = 0;
+	//int h0 = 105;
+	int w0 = 400;
 
 	if (m_imageSrc.data)
 	{
@@ -984,7 +1034,7 @@ int Image::FindCable(void)
 
 		int w = gray.cols;
 		int h = gray.rows;
-		int x = (w - 64) / 2;
+		int x = (w - w0) / 2;
 		int sumMax = 0;
 		int sum = 0;
 
@@ -994,7 +1044,7 @@ int Image::FindCable(void)
 			uchar* data = gray.ptr<uchar>(i);
 			sum = 0;
 
-			for (int j = x; j < x + 64; j++)
+			for (int j = x; j < x + w0; j++)
 			{
 				sum += *(data + j);
 			}
@@ -1006,14 +1056,34 @@ int Image::FindCable(void)
 			}
 		}
 
-		cv::line(m_imageSrc, Point(0, y + 100), Point(w - 1, y + 100), Scalar(0, 0, 255), 1, CV_AA);
-		cv::line(m_imageSrc, Point(0, y - 100), Point(w - 1, y - 100), Scalar(0, 0, 255), 1, CV_AA);
+		//cv::line(m_imageSrc, Point(0, y + h0), Point(w - 1, y + h0), Scalar(0, 0, 255), 1, CV_AA);
+		//cv::line(m_imageSrc, Point(0, y - h0), Point(w - 1, y - h0), Scalar(0, 0, 255), 1, CV_AA);
 	}
 
 	
 
 	return y;
 }
+
+
+/*
+* 参数：thresh--图像该兴趣部分的平均灰度值
+* 返回：
+* 功能：寻找光缆在图片中大致的起始位置
+*/
+void Image::CableRange(int y0)
+{
+	if (m_imageSrc.data)
+	{
+		int w = m_imageSrc.cols;
+		//int h = m_imageSrc.rows;
+		int h0 = 105;
+
+		cv::line(m_imageSrc, Point(0, y0 + h0), Point(w - 1, y0 + h0), Scalar(0, 0, 255), 1, CV_AA);
+		cv::line(m_imageSrc, Point(0, y0 - h0), Point(w - 1, y0 - h0), Scalar(0, 0, 255), 1, CV_AA);
+	}
+}
+
 
 
 /*
@@ -1060,8 +1130,6 @@ Mat& Image::Erode(int size)
 */
 Mat& Image::DrawMask(Point p1, Point p2)
 {
-	int x1 = p1.x;
-	int x2 = p2.x;
 	int y1 = p1.y;
 	int y2 = p2.y;
 
@@ -1227,10 +1295,10 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 			}
 
 			if (count >= cvRound(s * n))
-			{
-				i += gap;
+			{	
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
 				vec1.push_back(i);
+				i += gap;
 			}
 			else
 			{
@@ -1274,9 +1342,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				i += gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
 				vec1.push_back(i);
+				i += gap;
 			}
 			else
 			{
@@ -1318,9 +1386,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				i += gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 0, 255), 1, CV_AA);
 				vec1.push_back(i);
+				i += gap;
 			}
 			else
 			{
@@ -1364,9 +1432,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				i -= gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
 				vec2.push_back(i);
+				i -= gap;
 			}
 			else
 			{
@@ -1407,10 +1475,10 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 			}
 
 			if (count >= cvRound(s * n))
-			{
-				i -= gap;
+			{				
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
 				vec2.push_back(i);
+				i -= gap;
 			}
 			else
 			{
@@ -1452,9 +1520,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 			if (count >= cvRound(s * n))
 			{
-				i -= gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(255, 255, 0), 1, CV_AA);
 				vec2.push_back(i);
+				i -= gap;
 			}
 			else
 			{
@@ -1529,9 +1597,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 
 			if (count >= cvRound(s * n))
 			{
-				i += gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
 				vec.push_back(i);
+				i += gap;
 			}
 			else
 			{
@@ -1575,9 +1643,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 
 			if (count >= cvRound(s * n))
 			{
-				i += gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
 				vec.push_back(i);
+				i += gap;
 			}
 			else
 			{
@@ -1619,9 +1687,9 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 
 			if (count >= cvRound(s * n))
 			{
-				i += gap;
 				cv::line(m_imageSrc, Point(x1, y1), Point(x2, y2), Scalar(0, 255, 255), 1, CV_AA);
 				vec.push_back(i);
+				i += gap;
 			}
 			else
 			{

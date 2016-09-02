@@ -1,7 +1,7 @@
 /*******************************************************************************
 文件名称：camera.h
 创建日期：2016-02-11
-最后修改：2016-08-29
+最后修改：2016-08-31
 版	   本：v1.0.0
 作    者：syf
 功能描述：大恒相机操作类头文件
@@ -194,7 +194,10 @@ public:
 	BOOL SetAutoWhiteBalance(int index);
 
 	/// 设置白平衡系数
-	BOOL SetBalanceRatio(void);
+	BOOL SetBalanceRatio(int index, double ratio);
+
+	/// 获取白平衡系数
+	BOOL GetBalanceRatio(int index, double* ratio);
 
 	/// 设置自动曝光
 	BOOL SetAutoExposure(int index);

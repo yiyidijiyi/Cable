@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-16
-* 最后修改：2016-08-29
+* 最后修改：2016-09-02
 * 作    者：syf
 * 描    述：
 */
@@ -34,11 +34,17 @@ public:
 
 	BOOL LoadImage(const QString& path, int flag = 1);
 	BOOL LoadImage(Mat& image);
+
+	void SetK1(double k);
+	void SetK2(double K);
+	void SetPixsOfCable(int pixs);
+	int  GetPixsOfCable();
+
 	void DrawLineInMask();
 	void CreateMask1(Point p1, Point p2);
 	void CreateMask2(Point p1, Point p2);
 	Mat& GetMask(int index);
-	int GetAvg();
+	int GetAvg(int y0);
 	int GetAvgRoi();
 	double GetNoZero(Mat& m);
 	double GetDiff(Vec3b vec);
@@ -54,10 +60,12 @@ public:
 	Mat& ThreshFilter(int thresh, int size);
 	void Preprocessing(void);
 	Mat& ColorFilter(int channel, int thresh);
+	Mat& Binalization(int y0, int thresh);
 	Mat& MaskProcess(double s, int gap, int y, vector<int>& vec1, vector<int>& vec2);
 	Mat& MaskProcess(double s, int gap, int y, vector<int>& vec);
 
 	int FindCable(void);
+	void CableRange(int y0);
 	Mat& Dilate(int size);
 	Mat& Erode(int size);
 
@@ -76,6 +84,10 @@ private:
 	int m_roi1Height;		// 图像中感兴趣部分起始y坐标
 	int m_mask2Pixs;
 	int m_roi2Height;
+
+	double m_k1;
+	double m_k2;
+	int    m_pixsOfCable;
 };
 
 #endif // IMAGE_H

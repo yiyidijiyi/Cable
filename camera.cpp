@@ -1,7 +1,7 @@
 /*******************************************************************************
 文件名称：camera.c
 创建日期：2016-02-11
-最后修改：2016-08-29
+最后修改：2016-08-31
 版	   本：v1.0.0
 作    者：syf
 功能描述：大恒相机操作类
@@ -1269,7 +1269,10 @@ BOOL Camera::OpenCamera(void)
 	GX_VERIFY(emStatus);
 
 	// 设置白平衡系数
-	SetBalanceRatio();
+	SetBalanceRatio(0, 1.18);
+	SetBalanceRatio(1, 1.0);
+	SetBalanceRatio(2, 1.36);
+
 
 	return TRUE;
 }
@@ -1465,11 +1468,12 @@ BOOL Camera::SetAutoWhiteBalance(int index)
 
 
 /*
-* 参数：
+* 参数：index--白平衡通道
+        ratio--系数
 * 返回：
 * 功能：设置白平衡系数
 */
-BOOL Camera::SetBalanceRatio()
+BOOL Camera::SetBalanceRatio(int index, double ratio)
 {
 	//判断句柄是否有效，避免设备掉线后关闭程序出现的异常
 	if (m_hDevice == NULL)
@@ -1477,31 +1481,69 @@ BOOL Camera::SetBalanceRatio()
 		return FALSE;
 	}
 
-	double r = 1.17;
-	double g = 1.0;
-	double b = 1.18;
 	GX_STATUS emStatus = GX_STATUS_SUCCESS;
 
-	// 关闭白平衡
+	// 关闭自动白平衡
 	emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_WHITE_AUTO, 0);
+	GX_VERIFY(emStatus);
+
 
 	// 选择白平衡通道
-	emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 0);
+	switch (index)
+	{
+	case 0:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 0);
+		break;
+	case 1:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 1);
+		break;
+	case 2:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 2);
+		break;
+	}
+
 	GX_VERIFY(emStatus);
 
-	emStatus = GXSetFloat(m_hDevice, GX_FLOAT_BALANCE_RATIO, r);
+	emStatus = GXSetFloat(m_hDevice, GX_FLOAT_BALANCE_RATIO, ratio);
 	GX_VERIFY(emStatus);
 
-	emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 1);
+	return TRUE;
+}
+
+
+/*
+* 参数：index--白平衡通道
+		ratio--系数
+* 返回：
+* 功能：设置白平衡系数
+*/
+BOOL Camera::GetBalanceRatio(int index, double* ratio)
+{
+	//判断句柄是否有效，避免设备掉线后关闭程序出现的异常
+	if (m_hDevice == NULL)
+	{
+		return FALSE;
+	}
+
+	GX_STATUS emStatus = GX_STATUS_SUCCESS;
+
+	// 选择白平衡通道
+	switch (index)
+	{
+	case 0:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 0);
+		break;
+	case 1:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 1);
+		break;
+	case 2:
+		emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 2);
+		break;
+	}
+
 	GX_VERIFY(emStatus);
 
-	emStatus = GXSetFloat(m_hDevice, GX_FLOAT_BALANCE_RATIO, g);
-	GX_VERIFY(emStatus);
-
-	emStatus = GXSetEnum(m_hDevice, GX_ENUM_BALANCE_RATIO_SELECTOR, 2);
-	GX_VERIFY(emStatus);
-
-	emStatus = GXSetFloat(m_hDevice, GX_FLOAT_BALANCE_RATIO, b);
+	emStatus = GXGetFloat(m_hDevice, GX_FLOAT_BALANCE_RATIO, ratio);
 	GX_VERIFY(emStatus);
 
 	return TRUE;

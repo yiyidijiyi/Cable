@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-15
-* 最后修改：2016-08-31
+* 最后修改：2016-09-02
 * 作    者：syf
 * 描    述：
 */
@@ -71,6 +71,8 @@ public slots:
 	void OnExposureModeChanged();
 	void OnExporureValueChanged();
 	void OnWhiteBalanceModeChanged();
+	void OnWhiteBalanceRatioChanged();
+	void OnWhiteBalanceChannelChanged();
 protected:
 	void mousePressEvent(QMouseEvent* event);
 
