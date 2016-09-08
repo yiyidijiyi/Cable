@@ -500,7 +500,7 @@ int Image::GetAvg(int y0)
 		Mat gray;
 		int w = m_image.cols;
 		//int h = m_image.rows;
-		int h0 = 100;
+		int h0 = m_pixsOfCable;
 		int pixCnt = 0;
 		int pixSum = 0;
 		int thresh = 0;
@@ -1077,7 +1077,7 @@ void Image::CableRange(int y0)
 	{
 		int w = m_imageSrc.cols;
 		//int h = m_imageSrc.rows;
-		int h0 = 105;
+		int h0 = m_pixsOfCable + 5;
 
 		cv::line(m_imageSrc, Point(0, y0 + h0), Point(w - 1, y0 + h0), Scalar(0, 0, 255), 1, CV_AA);
 		cv::line(m_imageSrc, Point(0, y0 - h0), Point(w - 1, y0 - h0), Scalar(0, 0, 255), 1, CV_AA);
@@ -1246,7 +1246,7 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec1, vector<int>& vec2
 
 	if (m_imageDst.data)
 	{
-		int h0 = 100;
+		int h0 = m_pixsOfCable;
 		double k = -0.61;
 		int x1, y1, x2, y2;
 		int b;
@@ -1548,7 +1548,7 @@ Mat& Image::Calc(int y0, double s, int gap, vector<int>& vec)
 	if (m_imageDst.data)
 	{
 		double k = -0.129;
-		int h0 = 100;
+		int h0 = m_pixsOfCable;
 		int x1, y1, x2, y2;
 		int b;
 		int row = m_imageDst.rows;

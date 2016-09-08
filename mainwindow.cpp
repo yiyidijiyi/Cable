@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-15
-* 最后修改：2016-09-02
+* 最后修改：2016-09-07
 * 作    者：syf
 * 描    述：
 */
@@ -84,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->pushButton_reduceAngle, &QPushButton::clicked, this, &MainWindow::OnReduceAngleClicked);
 	connect(ui->pushButton_createMask1, &QPushButton::clicked, this, &MainWindow::OnCreateMask1Clicked);
 	connect(ui->pushButton_createMask2, &QPushButton::clicked, this, &MainWindow::OnCreateMask2Clicked);
+	connect(ui->pushButton_setPixsOfCable, &QPushButton::clicked, this, &MainWindow::OnPixOfCableClicked);
 	connect(ui->pushButton_openCamera, &QPushButton::clicked, this, &MainWindow::OnOpenCameraClicked);
 	connect(ui->pushButton_closeCamera, &QPushButton::clicked, this, &MainWindow::OnCloseCameraClicked);
 	connect(ui->pushButton_startSnap, &QPushButton::clicked, this, &MainWindow::OnStartSnapClicked);
@@ -441,6 +442,7 @@ void MainWindow::OnMaskClicked()
 {
 	double s1 = ui->lineEdit_scale1->text().toDouble();
 	int gap1 = ui->lineEdit_gap1->text().toInt();
+	double t = 0;
 	vector<int> vec1;
 	vector<int> vec2;
 	vector<int> vec3;
@@ -449,12 +451,14 @@ void MainWindow::OnMaskClicked()
 	int gap2 = ui->lineEdit_gap2->text().toInt();
 
 	int thresh = ui->lineEdit_avg->text().toInt();
+	t = static_cast<double>(getTickCount());
 	int y0 = m_pImage->FindCable();
 	m_pImage->Preprocessing();
 	m_pImage->ColorFilter(3, thresh);
 	m_pImage->Calc(y0, s1, gap1, vec1, vec2);
 	m_pImage->ColorFilter(2, thresh);
 	m_pImage->Calc(y0, s2, gap2, vec3);
+	t = ((double)getTickCount() - t) / getTickFrequency();
 	//ShowImage(m_pImage->GetSrc());
 	//ShowImage(m_pImage->ColorFilter(2, thresh));
 
@@ -466,10 +470,19 @@ void MainWindow::OnMaskClicked()
 	m_pImage->CableRange(y0);
 	ShowImage(m_pImage->GetSrc());
 
+	// 保存处理后的图像
+	QString  name = QTime::currentTime().toString("h_m_s");
+	QString path = "./result/" + name + ".jpg";
+	vector<int> compressionParams;
+	compressionParams.push_back(CV_IMWRITE_JPEG_QUALITY);
+	compressionParams.push_back(95);
+	imwrite(path.toStdString(), m_pImage->GetSrc(), compressionParams);
+
 	size_t size1 = vec1.size();
 	size_t size2 = vec2.size();
 	size_t size3 = vec3.size();
 
+	ui->textEdit->append(QStringLiteral("处理时间：") + QString::number(t) + "S");
 
 	if ((size1 != size2) || (size1 < 2) || (size2 < 2))
 	{
@@ -912,6 +925,19 @@ void MainWindow::OnCreateMask2Clicked()
 	m_pImage->SetK2(k);
 
 	//m_pImage->CreateMask2(p1, p2);
+}
+
+
+/*
+* 参数：
+* 返回：
+* 功能：槽函数，设置光缆宽度所占像素
+*/
+void MainWindow::OnPixOfCableClicked()
+{
+	int pixs = ui->lineEdit_pixsOfCable->text().toInt();
+
+	m_pImage->SetPixsOfCable(pixs);
 }
 
 

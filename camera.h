@@ -1,7 +1,7 @@
 /*******************************************************************************
 文件名称：camera.h
 创建日期：2016-02-11
-最后修改：2016-08-31
+最后修改：2016-09-07
 版	   本：v1.0.0
 作    者：syf
 功能描述：大恒相机操作类头文件
@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <QString>
 #include <QTextCodec>
+#include <QDateTime>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

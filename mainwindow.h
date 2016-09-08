@@ -52,6 +52,7 @@ public slots:
 	void OnReduceAngleClicked();
 	void OnCreateMask1Clicked();
 	void OnCreateMask2Clicked();
+	void OnPixOfCableClicked();
 
 	void OnThreshClicked();
 	void OnToSrcClicked();
