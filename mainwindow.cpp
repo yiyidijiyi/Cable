@@ -1,6 +1,6 @@
 /*
 * 创建日期：2016-08-15
-* 最后修改：2016-09-07
+* 最后修改：2016-09-22
 * 作    者：syf
 * 描    述：
 */
@@ -442,7 +442,9 @@ void MainWindow::OnMaskClicked()
 {
 	double s1 = ui->lineEdit_scale1->text().toDouble();
 	int gap1 = ui->lineEdit_gap1->text().toInt();
-	double t = 0;
+	//double t = 0;
+	int t = 0;
+	QTime time;
 	vector<int> vec1;
 	vector<int> vec2;
 	vector<int> vec3;
@@ -451,14 +453,16 @@ void MainWindow::OnMaskClicked()
 	int gap2 = ui->lineEdit_gap2->text().toInt();
 
 	int thresh = ui->lineEdit_avg->text().toInt();
-	t = static_cast<double>(getTickCount());
+	//t = static_cast<double>(getTickCount());
+	time.start();
 	int y0 = m_pImage->FindCable();
 	m_pImage->Preprocessing();
 	m_pImage->ColorFilter(3, thresh);
 	m_pImage->Calc(y0, s1, gap1, vec1, vec2);
 	m_pImage->ColorFilter(2, thresh);
 	m_pImage->Calc(y0, s2, gap2, vec3);
-	t = ((double)getTickCount() - t) / getTickFrequency();
+	t = time.elapsed();
+	//t = ((double)getTickCount() - t) / getTickFrequency();
 	//ShowImage(m_pImage->GetSrc());
 	//ShowImage(m_pImage->ColorFilter(2, thresh));
 
@@ -482,7 +486,7 @@ void MainWindow::OnMaskClicked()
 	size_t size2 = vec2.size();
 	size_t size3 = vec3.size();
 
-	ui->textEdit->append(QStringLiteral("处理时间：") + QString::number(t) + "S");
+	ui->textEdit->append(QStringLiteral("处理时间：") + QString::number(t) + "ms");
 
 	if ((size1 != size2) || (size1 < 2) || (size2 < 2))
 	{
